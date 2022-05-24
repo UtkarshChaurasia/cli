@@ -387,6 +387,18 @@ func TestListTaskRuns(t *testing.T) {
 			wantError: true,
 		},
 		{
+			name:      "filter taskruns by field metadata.name",
+			command:   commandV1alpha1(t, trs, now, ns, version, dc1),
+			args:      []string{"list", "-n", "foo", "--field", "metadata.name=tr0-1"},
+			wantError: false,
+		},
+		{
+			name:      "filter taskruns by field metadata.namespace",
+			command:   commandV1alpha1(t, trs, now, ns, version, dc1),
+			args:      []string{"list", "-n", "foo", "--field", "metadata.namespace=foo"},
+			wantError: false,
+		},
+		{
 			name:      "print in reverse",
 			command:   commandV1alpha1(t, trs, now, ns, version, dc1),
 			args:      []string{"list", "--reverse", "-n", "foo"},
@@ -779,6 +791,18 @@ func TestListTaskRuns_v1beta1(t *testing.T) {
 			command:   commandV1beta1(t, trs, now, ns, version, dc1),
 			args:      []string{"list", "-n", "foo", "--label", "honey=nutella", "tr3-1"},
 			wantError: true,
+		},
+		{
+			name:      "filter taskruns by field metadata.name",
+			command:   commandV1beta1(t, trs, now, ns, version, dc1),
+			args:      []string{"list", "-n", "foo", "--field", "metadata.name=tr0-1"},
+			wantError: false,
+		},
+		{
+			name:      "filter taskruns by field metadata.namespace",
+			command:   commandV1beta1(t, trs, now, ns, version, dc1),
+			args:      []string{"list", "-n", "foo", "--field", "metadata.namespace=foo"},
+			wantError: false,
 		},
 		{
 			name:      "print in reverse",
