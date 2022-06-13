@@ -54,6 +54,7 @@ NAME	STARTED	DURATION	STATUS
 type ListOptions struct {
 	Limit         int
 	LabelSelector string
+	FieldSelector string
 	Reverse       bool
 	AllNamespaces bool
 	NoHeaders     bool
@@ -90,7 +91,7 @@ List all TaskRuns of Task 'foo' in namespace 'bar':
 				return fmt.Errorf("limit was %d but must be a positive number", opts.Limit)
 			}
 
-			trs, err := list(p, task, opts.Limit, opts.LabelSelector, opts.AllNamespaces)
+			trs, err := list(p, task, opts.Limit, opts.LabelSelector, opts.FieldSelector, opts.AllNamespaces)
 			if err != nil {
 				return fmt.Errorf("failed to list TaskRuns from namespace %s: %v", p.Namespace(), err)
 			}
@@ -137,6 +138,7 @@ List all TaskRuns of Task 'foo' in namespace 'bar':
 	f.AddFlags(c)
 	c.Flags().IntVarP(&opts.Limit, "limit", "", 0, "limit TaskRuns listed (default: return all TaskRuns)")
 	c.Flags().StringVarP(&opts.LabelSelector, "label", "", opts.LabelSelector, "A selector (label query) to filter on, supports '=', '==', and '!='")
+	c.Flags().StringVarP(&opts.FieldSelector, "field", "", opts.FieldSelector, "A selector (field query) to filter on supports '=', '==', and '!='")
 	c.Flags().BoolVarP(&opts.Reverse, "reverse", "", opts.Reverse, "list TaskRuns in reverse order")
 	c.Flags().BoolVarP(&opts.AllNamespaces, "all-namespaces", "A", opts.AllNamespaces, "list TaskRuns from all namespaces")
 	c.Flags().BoolVarP(&opts.NoHeaders, "no-headers", "", opts.NoHeaders, "do not print column headers with output (default print column headers with output)")
@@ -155,12 +157,17 @@ func reverse(trs *v1beta1.TaskRunList) {
 	trs.Items = trItems
 }
 
-func list(p cli.Params, task string, limit int, labelselector string, allnamespaces bool) (*v1beta1.TaskRunList, error) {
+func list(p cli.Params, task string, limit int, labelselector string, fieldselector string, allnamespaces bool) (*v1beta1.TaskRunList, error) {
 	var selector string
+	var fselector string
 	var options v1.ListOptions
 
 	if task != "" && labelselector != "" {
 		return nil, fmt.Errorf("specifying a Task and labels are not compatible")
+	}
+
+	if task != "" && fieldselector != "" {
+		return nil, fmt.Errorf("specifying a Task and fields are not compatible")
 	}
 
 	if task != "" {
@@ -172,6 +179,18 @@ func list(p cli.Params, task string, limit int, labelselector string, allnamespa
 	if selector != "" {
 		options = v1.ListOptions{
 			LabelSelector: selector,
+		}
+	}
+
+	if task != "" {
+		fselector = fmt.Sprintf("tekton.dev/task=%s", task)
+	} else if fieldselector != "" {
+		fselector = fieldselector
+	}
+
+	if fselector != "" {
+		options = v1.ListOptions{
+			FieldSelector: fselector,
 		}
 	}
 
